@@ -65,16 +65,38 @@ const INSPECTOR_STYLES = `
   }
   .inspector-panel.visible { display: flex; }
 
-  /* Header */
+  /* Header & Breadcrumbs */
   .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    padding: 8px 12px;
     background: #f9fafb;
     border-bottom: 1px solid #e5e7eb;
   }
-  .tag-name { font-weight: 700; color: #db2777; font-family: monospace; }
+  .breadcrumbs {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: monospace;
+    font-size: 11px;
+  }
+  .crumb {
+    color: #6b7280;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .crumb:hover { background: #e5e7eb; color: #1f2937; }
+  .crumb.active {
+    font-weight: 700;
+    color: #db2777;
+    background: #fce7f3;
+  }
+  .separator { color: #9ca3af; font-size: 10px; }
+
   .close-btn { cursor: pointer; background: none; border: none; font-size: 18px; color: #9ca3af; }
   .close-btn:hover { color: #4b5563; }
 
@@ -98,6 +120,12 @@ const INSPECTOR_STYLES = `
   .tab-content.active { display: block; }
 
   /* -- CLASSES TAB -- */
+  .group-label {
+    font-size: 10px; text-transform: uppercase; color: #9ca3af; font-weight: 600;
+    margin: 8px 0 4px 0; letter-spacing: 0.5px;
+  }
+  .group-label:first-child { margin-top: 0; }
+  
   .class-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .class-chip {
     background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
@@ -107,7 +135,7 @@ const INSPECTOR_STYLES = `
   .delete-x { cursor: pointer; font-weight: bold; color: #60a5fa; }
   .delete-x:hover { color: #2563eb; }
 
-  .input-wrapper { position: relative; }
+  .input-wrapper { position: relative; margin-top: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px; }
   .input-row { display: flex; gap: 8px; }
   input[type="text"] {
     flex: 1; border: 1px solid #d1d5db; border-radius: 4px;
@@ -121,19 +149,6 @@ const INSPECTOR_STYLES = `
   button.action-btn:hover { background: #2563eb; }
   button.secondary-btn { background: #f3f4f6; color: #374151; width: 100%; margin-top: 8px; }
   button.secondary-btn:hover { background: #e5e7eb; }
-
-  /* Autocomplete Dropdown */
-  .suggestions {
-    position: absolute; top: 100%; left: 0; right: 0;
-    background: white; border: 1px solid #e5e7eb; border-radius: 0 0 4px 4px;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-    max-height: 150px; overflow-y: auto; z-index: 10; display: none;
-  }
-  .suggestion-item {
-    padding: 6px 8px; cursor: pointer; font-family: monospace;
-  }
-  .suggestion-item:hover { background: #eff6ff; color: #1d4ed8; }
-  .suggestion-match { font-weight: bold; color: #3b82f6; }
 
   /* -- COMPUTED TAB -- */
   .computed-row {
@@ -182,7 +197,7 @@ function init() {
     <!-- Main Panel -->
     <div id="panel" class="inspector-panel">
       <div class="header">
-        <span class="tag-name" id="tagName">div</span>
+        <div class="breadcrumbs" id="breadcrumbs"></div>
         <button class="close-btn" id="closeBtn">&times;</button>
       </div>
 
@@ -195,13 +210,13 @@ function init() {
 
       <!-- Tab 1: Editor -->
       <div id="tab-classes" class="tab-content active">
-        <div class="class-list" id="classList"></div>
+        <div id="groupedClassList"></div>
+        
         <div class="input-wrapper">
           <div class="input-row">
-            <input type="text" id="addClassInput" placeholder="Add Tailwind class..." autocomplete="off">
+            <input type="text" id="addClassInput" placeholder="Add class..." autocomplete="off">
             <button id="addBtn" class="action-btn">Add</button>
           </div>
-          <div id="suggestions" class="suggestions"></div>
         </div>
         <button id="copyBtn" class="action-btn secondary-btn">Copy All Classes</button>
       </div>
@@ -228,7 +243,6 @@ function setupUIEvents() {
     const tabs = overlayRoot.querySelectorAll('.tab');
     const tabContents = overlayRoot.querySelectorAll('.tab-content');
 
-    // Input
     const input = overlayRoot.getElementById('addClassInput');
     const addBtn = overlayRoot.getElementById('addBtn');
     const copyBtn = overlayRoot.getElementById('copyBtn');
@@ -251,15 +265,15 @@ function setupUIEvents() {
         });
     });
 
-
     // Add Class
     const addClass = () => {
         if (!selectedElement || !input.value.trim()) return;
         const newClasses = input.value.split(' ').filter(c => c.trim().length > 0);
         selectedElement.classList.add(...newClasses);
         input.value = '';
+
         renderClassList(selectedElement);
-        renderComputedStyles(selectedElement); // Update computed in case layout changed
+        renderComputedStyles(selectedElement);
         highlightElement(selectedElement);
     };
 
@@ -331,9 +345,8 @@ function hideHighlighter() {
 
 function openEditor(el) {
     const panel = overlayRoot.getElementById('panel');
-    overlayRoot.getElementById('tagName').textContent = `<${el.tagName.toLowerCase()}>`;
 
-    // Render content for all tabs
+    renderBreadcrumbs(el);
     renderClassList(el);
     renderComputedStyles(el);
     renderColorPalette(el);
@@ -360,8 +373,43 @@ function openEditor(el) {
 
 // --- Renderers ---
 
+function renderBreadcrumbs(el) {
+    const container = overlayRoot.getElementById('breadcrumbs');
+    container.innerHTML = '';
+
+    // Get current + 2 parents
+    let path = [el];
+    let curr = el.parentElement;
+    if (curr) { path.unshift(curr); if (curr.parentElement) path.unshift(curr.parentElement); }
+
+    path.forEach((node, idx) => {
+        const isLast = idx === path.length - 1;
+
+        const span = document.createElement('span');
+        span.className = isLast ? 'crumb active' : 'crumb';
+        span.textContent = node.tagName.toLowerCase() + (node.id ? `#${node.id}` : '');
+
+        if (!isLast) {
+            span.onclick = () => {
+                selectedElement = node;
+                highlightElement(selectedElement);
+                openEditor(selectedElement);
+            };
+        }
+
+        container.appendChild(span);
+
+        if (!isLast) {
+            const sep = document.createElement('span');
+            sep.className = 'separator';
+            sep.textContent = ' > ';
+            container.appendChild(sep);
+        }
+    });
+}
+
 function renderClassList(el) {
-    const container = overlayRoot.getElementById('classList');
+    const container = overlayRoot.getElementById('groupedClassList');
     container.innerHTML = '';
     const classes = Array.from(el.classList);
 
@@ -370,18 +418,58 @@ function renderClassList(el) {
         return;
     }
 
+    // Group Classes Logic
+    const groups = {
+        'Layout & Spacing': [],
+        'Typography': [],
+        'Colors & Backgrounds': [],
+        'Interactive (Hover/Focus)': [],
+        'Responsive (sm/md/lg)': [],
+        'Others': []
+    };
+
     classes.forEach(cls => {
-        const chip = document.createElement('div');
-        chip.className = 'class-chip';
-        chip.innerHTML = `<span>${cls}</span><span class="delete-x">&times;</span>`;
-        chip.querySelector('.delete-x').onclick = (e) => {
-            e.stopPropagation();
-            el.classList.remove(cls);
-            renderClassList(el);
-            renderComputedStyles(el);
-            highlightElement(el);
-        };
-        container.appendChild(chip);
+        if (cls.includes('hover:') || cls.includes('focus:') || cls.includes('active:')) {
+            groups['Interactive (Hover/Focus)'].push(cls);
+        } else if (cls.match(/^(sm:|md:|lg:|xl:|2xl:)/)) {
+            groups['Responsive (sm/md/lg)'].push(cls);
+        } else if (cls.match(/^(text-|font-|leading-|tracking-)/)) {
+            groups['Typography'].push(cls);
+        } else if (cls.match(/^(bg-|text-|border-|shadow-)/)) { // Simple color/bg detection
+            groups['Colors & Backgrounds'].push(cls);
+        } else if (cls.match(/^(p-|m-|w-|h-|flex|grid|gap-|justify-|items-|absolute|relative|fixed)/)) {
+            groups['Layout & Spacing'].push(cls);
+        } else {
+            groups['Others'].push(cls);
+        }
+    });
+
+    // Render Groups
+    Object.entries(groups).forEach(([label, groupClasses]) => {
+        if (groupClasses.length === 0) return;
+
+        const groupLabel = document.createElement('div');
+        groupLabel.className = 'group-label';
+        groupLabel.textContent = label;
+        container.appendChild(groupLabel);
+
+        const list = document.createElement('div');
+        list.className = 'class-list';
+
+        groupClasses.forEach(cls => {
+            const chip = document.createElement('div');
+            chip.className = 'class-chip';
+            chip.innerHTML = `<span>${cls}</span><span class="delete-x">&times;</span>`;
+            chip.querySelector('.delete-x').onclick = (e) => {
+                e.stopPropagation();
+                el.classList.remove(cls);
+                renderClassList(el);
+                renderComputedStyles(el);
+                highlightElement(el);
+            };
+            list.appendChild(chip);
+        });
+        container.appendChild(list);
     });
 }
 
@@ -393,12 +481,12 @@ function renderComputedStyles(el) {
         'font-size', 'font-weight', 'font-family', 'color',
         'margin', 'padding',
         'width', 'height', 'display', 'position',
-        'background-color', 'border-radius', 'box-shadow'
+        'background-color', 'border-radius', 'box-shadow', 'z-index'
     ];
 
     container.innerHTML = props.map(p => {
         const val = style.getPropertyValue(p);
-        if (!val || val === 'none' || val === '0px' || val === 'rgba(0, 0, 0, 0)') return '';
+        if (!val || val === 'none' || val === '0px' || val === 'rgba(0, 0, 0, 0)' || val === 'auto' || val === 'normal') return '';
         return `
       <div class="computed-row">
         <span class="prop-name">${p}</span>
@@ -427,9 +515,7 @@ function renderColorPalette(el) {
 
     colorProps.forEach(cp => {
         const val = style.getPropertyValue(cp.prop);
-        // Filter out transparent/default colors
         if (val && val !== 'rgba(0, 0, 0, 0)' && val !== 'transparent' && val !== 'rgb(0, 0, 0)') {
-            // Convert rgb to hex for better UX? kept as rgb for simplicity/accuracy
             colors.push({ ...cp, val });
         }
     });
@@ -449,7 +535,6 @@ function renderColorPalette(el) {
     </div>
   `).join('');
 
-    // Add click-to-copy
     container.querySelectorAll('.color-item').forEach(item => {
         item.addEventListener('click', () => {
             const colorVal = item.querySelector('.color-hex').textContent;
