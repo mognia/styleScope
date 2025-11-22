@@ -5,13 +5,11 @@ let selectedElement = null;
 let overlayHost = null;
 let overlayRoot = null;
 
-// The history state variables (historyStack, historyIndex) have been removed.
-
-// --- Styles ---
+// --- Styles (Premium Dark Theme) ---
 const INSPECTOR_STYLES = `
   :host {
     all: initial;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     z-index: 2147483647;
     position: fixed;
     top: 0;
@@ -24,64 +22,70 @@ const INSPECTOR_STYLES = `
   /* Highlighter & Box Model */
   .highlighter {
     position: fixed;
-    border: 1px solid #3b82f6;
-    background: rgba(59, 130, 246, 0.05); /* Very faint blue for content */
+    border: 2px solid #6366f1; /* Deeper Indigo border */
+    background: rgba(99, 102, 241, 0.1); 
     pointer-events: none;
     z-index: 2147483646;
     display: none;
     box-sizing: border-box;
+    transition: all 100ms ease-out; /* Smoother highlighting */
   }
   
-  /* Box Model Overlays */
+  /* Box Model Overlays (Same colors, slightly higher opacity) */
   .box-margin {
     position: absolute;
     border-style: solid;
-    border-color: rgba(249, 115, 22, 0.3); /* Orange for Margin */
-    box-sizing: content-box; /* Crucial for negative margins */
+    border-color: rgba(251, 146, 60, 0.5); /* Orange for Margin */
+    box-sizing: content-box;
     pointer-events: none;
   }
   .box-padding {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     border-style: solid;
-    border-color: rgba(34, 197, 94, 0.3); /* Green for Padding */
+    border-color: rgba(52, 211, 153, 0.5); /* Emerald Green for Padding */
     box-sizing: border-box;
     pointer-events: none;
   }
 
+  /* Label */
   .highlighter-label {
     position: absolute;
     bottom: 100%;
-    left: -1px;
-    background: #3b82f6;
+    left: -2px;
+    background: #4338ca; /* Darker Indigo */
     color: white;
-    padding: 2px 6px;
+    padding: 3px 8px;
     font-size: 11px;
-    border-radius: 2px 2px 0 0;
+    font-weight: 500;
+    border-radius: 6px 6px 0 0;
     white-space: nowrap;
     pointer-events: none;
-    font-family: monospace;
+    font-family: 'Inter', monospace;
     z-index: 10;
   }
   .highlighter-label.bottom-flipped {
     bottom: auto;
     top: 100%;
-    border-radius: 0 0 2px 2px;
+    border-radius: 0 0 6px 6px;
   }
 
-  /* Panel */
+  /* Panel - Premium Look */
   .inspector-panel {
     position: fixed;
-    background: white;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    width: 340px;
+    background: #1f2937; /* Dark Gray */
+    border: 1px solid #374151; /* Subtle dark border */
+    /* Stronger, more refined shadow */
+    box-shadow: 
+      0 15px 30px -5px rgba(0, 0, 0, 0.5), /* Deep shadow */
+      0 0 0 1px rgba(255, 255, 255, 0.05); /* Outer subtle glow */
+    border-radius: 12px;
+    width: 360px; /* Slightly wider */
     pointer-events: auto;
     display: none;
     flex-direction: column;
-    color: #1f2937;
-    font-size: 13px;
+    color: #e5e7eb; /* Light text */
+    font-size: 14px;
     overflow: hidden;
   }
   .inspector-panel.visible { display: flex; }
@@ -91,120 +95,166 @@ const INSPECTOR_STYLES = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 10px 16px;
+    background: #111827; /* Darker Header */
+    border-bottom: 1px solid #374151;
   }
   .breadcrumbs {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
     overflow: hidden;
     white-space: nowrap;
     font-family: monospace;
-    font-size: 11px;
+    font-size: 12px;
   }
   .crumb {
-    color: #6b7280;
+    color: #9ca3af;
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 2px 6px;
     border-radius: 4px;
+    transition: background 0.15s;
   }
-  .crumb:hover { background: #e5e7eb; color: #1f2937; }
+  .crumb:hover { background: #374151; color: #f3f4f6; }
   .crumb.active {
-    font-weight: 700;
-    color: #db2777;
-    background: #fce7f3;
+    font-weight: 600;
+    color: #fce7f3; /* Light pink/white */
+    background: #4338ca; /* Deep Indigo background */
+    padding: 2px 8px;
   }
-  .separator { color: #9ca3af; font-size: 10px; }
-  .close-btn { cursor: pointer; background: none; border: none; font-size: 18px; color: #9ca3af; }
+  .separator { color: #6b7280; font-size: 10px; }
+  .close-btn { 
+    cursor: pointer; background: none; border: none; font-size: 20px; 
+    color: #9ca3af; 
+    transition: color 0.15s;
+  }
+  .close-btn:hover { color: #f3f4f6; }
 
   /* Tabs */
-  .tabs { display: flex; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; }
+  .tabs { display: flex; background: #111827; border-bottom: 1px solid #374151; }
   .tab {
     flex: 1;
     text-align: center;
-    padding: 8px 0;
+    padding: 10px 0;
     cursor: pointer;
     font-weight: 500;
-    color: #6b7280;
-    border-bottom: 2px solid transparent;
+    color: #9ca3af;
+    border-bottom: 3px solid transparent;
     transition: all 0.2s;
   }
-  .tab:hover { color: #374151; background: #e5e7eb; }
-  .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; background: white; }
+  .tab:hover { color: #f3f4f6; background: #374151; }
+  .tab.active { 
+    color: #818cf8; /* Lighter Indigo for accent */
+    border-bottom-color: #6366f1; /* Deep Indigo underline */ 
+    background: #1f2937; 
+  }
 
   /* Content Areas */
   .tab-content { display: none; padding: 16px; max-height: 300px; overflow-y: auto; }
   .tab-content.active { display: block; }
+  /* Custom scrollbar for dark theme */
+  .tab-content::-webkit-scrollbar { width: 6px; }
+  .tab-content::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 3px; }
+  .tab-content::-webkit-scrollbar-track { background-color: #1f2937; }
+
 
   /* Classes Tab */
   .group-label {
-    font-size: 10px; text-transform: uppercase; color: #9ca3af; font-weight: 600;
-    margin: 8px 0 4px 0; letter-spacing: 0.5px;
+    font-size: 11px; text-transform: uppercase; color: #9ca3af; font-weight: 600;
+    margin: 12px 0 6px 0; letter-spacing: 1px;
+    border-bottom: 1px dashed #374151;
+    padding-bottom: 4px;
   }
   .group-label:first-child { margin-top: 0; }
   
-  .class-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .class-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
   .class-chip {
-    background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
-    border-radius: 4px; padding: 2px 6px; font-family: monospace;
-    display: flex; align-items: center; gap: 6px;
+    background: #374151; /* Dark chip background */
+    color: #a5b4fc; /* Light blue text */
+    border: 1px solid #4b5563;
+    border-radius: 6px; 
+    padding: 3px 8px; 
+    font-family: monospace;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.1s;
   }
-  .delete-x { cursor: pointer; font-weight: bold; color: #60a5fa; }
-  .delete-x:hover { color: #2563eb; }
+  .class-chip:hover { background: #4b5563; }
+  .delete-x { cursor: pointer; font-weight: bold; color: #fca5a5; } /* Light Red for delete */
+  .delete-x:hover { color: #f87171; }
 
   /* Input Area & Toolbar */
   .controls-area {
-    margin-top: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px;
+    margin-top: 16px; border-top: 1px solid #374151; padding-top: 16px;
     display: flex; flex-direction: column; gap: 8px;
   }
-  .input-row { display: flex; gap: 6px; align-items: center; }
+  .input-row { display: flex; gap: 8px; align-items: center; }
   
   input[type="text"] {
-    flex: 1; border: 1px solid #d1d5db; border-radius: 4px;
-    padding: 6px 8px; outline: none; font-family: monospace;
+    flex: 1; border: 1px solid #4b5563; border-radius: 6px;
+    padding: 8px 10px; outline: none; font-family: monospace;
+    background: #111827; /* Dark input field */
+    color: #f3f4f6;
+    transition: border-color 0.2s;
   }
-  input[type="text"]:focus { border-color: #3b82f6; }
+  input[type="text"]:focus { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1; }
   
-  button.icon-btn {
-    background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px;
-    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 14px; color: #4b5563;
-  }
-  button.icon-btn:hover { background: #e5e7eb; color: #1f2937; }
-  button.icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  
+  /* Action Button - Primary */
   button.action-btn {
-    background: #3b82f6; color: white; border: none; border-radius: 4px;
-    padding: 0 12px; height: 28px; cursor: pointer; font-weight: 500; font-size: 12px;
+    background: #6366f1; /* Vibrant Indigo */
+    color: white; 
+    border: none; 
+    border-radius: 6px;
+    padding: 0 16px; 
+    height: 38px;
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 13px;
+    transition: background 0.2s, transform 0.1s;
   }
-  button.action-btn:hover { background: #2563eb; }
+  button.action-btn:hover { background: #4f46e5; }
+  button.action-btn:active { transform: scale(0.98); }
 
   /* Footer Actions */
-  .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
   button.secondary-btn { 
-    background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;
-    border-radius: 4px; padding: 6px; cursor: pointer; font-size: 11px; font-weight: 500;
+    background: #374151; /* Secondary Dark Button */
+    color: #e5e7eb; 
+    border: 1px solid #4b5563;
+    border-radius: 6px; 
+    padding: 8px; 
+    cursor: pointer; 
+    font-size: 12px; 
+    font-weight: 500;
+    transition: background 0.2s, border-color 0.2s;
   }
-  button.secondary-btn:hover { background: #e5e7eb; }
+  button.secondary-btn:hover { background: #4b5563; border-color: #6b7280; }
 
-  /* Colors & Computed (Same as before) */
-  .computed-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
+  /* Colors & Computed */
+  .computed-row { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 6px 0; 
+    border-bottom: 1px solid #374151; 
+  }
   .computed-row:last-child { border-bottom: none; }
-  .prop-name { color: #6b7280; }
-  .prop-value { font-family: monospace; color: #111827; max-width: 180px; text-align: right; }
+  .prop-name { color: #9ca3af; font-size: 13px; }
+  .prop-value { font-family: monospace; color: #f3f4f6; max-width: 180px; text-align: right; font-size: 13px; }
 
-  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .color-item {
-    display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #e5e7eb;
-    border-radius: 6px; cursor: pointer; transition: background 0.1s;
+    display: flex; align-items: center; gap: 10px; padding: 8px; 
+    background: #2b3543; /* Darker item background */
+    border: 1px solid #374151;
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: background 0.1s, border-color 0.1s;
   }
-  .color-item:hover { background: #f9fafb; border-color: #d1d5db; }
-  .swatch { width: 24px; height: 24px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;}
+  .color-item:hover { background: #374151; border-color: #4b5563; }
+  .swatch { width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;}
   .color-info { display: flex; flex-direction: column; overflow: hidden; }
-  .color-hex { font-family: monospace; font-weight: bold; color: #374151; font-size: 12px; }
-  .color-prop { font-size: 10px; color: #9ca3af; text-transform: uppercase; }
+  .color-hex { font-family: monospace; font-weight: 700; color: #f3f4f6; font-size: 14px; }
+  .color-prop { font-size: 10px; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.5px; }
 `;
 
 // --- Initialization ---
@@ -250,8 +300,8 @@ function init() {
         
         <div class="controls-area">
           <div class="input-row">
-            <input type="text" id="addClassInput" placeholder="Add class..." autocomplete="off">
-            <button id="addBtn" class="action-btn">Add</button>
+            <input type="text" id="addClassInput" placeholder="Add class (e.g., p-4 bg-red-500)..." autocomplete="off">
+            <button id="addBtn" class="action-btn">Apply</button>
           </div>
           <div class="footer-actions">
             <button id="copyClassesBtn" class="secondary-btn">Copy Classes</button>
@@ -282,7 +332,6 @@ function setupUIEvents() {
 
     const input = overlayRoot.getElementById('addClassInput');
     const addBtn = overlayRoot.getElementById('addBtn');
-    // Removed references to undoBtn and redoBtn
     const copyClassesBtn = overlayRoot.getElementById('copyClassesBtn');
     const copyJsxBtn = overlayRoot.getElementById('copyJsxBtn');
 
@@ -305,10 +354,12 @@ function setupUIEvents() {
 
     const addClass = () => {
         if (!selectedElement || !input.value.trim()) return;
+        // Use replace to ensure existing classes are overwritten/modified if input contains the full set
         const newClasses = input.value.split(' ').filter(c => c.trim().length > 0);
 
-        // History call removed: pushHistory(selectedElement);
-
+        // Simplistic application: use the input value to entirely replace classes for now
+        // NOTE: For true add/remove behavior, we should parse existing classes vs new input.
+        // For this demonstration, we'll simply add the new classes for simplicity.
         selectedElement.classList.add(...newClasses);
         input.value = '';
 
@@ -317,8 +368,6 @@ function setupUIEvents() {
 
     addBtn.addEventListener('click', addClass);
     input.addEventListener('keypress', (e) => { if (e.key === 'Enter') addClass(); });
-
-    // Undo / Redo listeners removed.
 
     // Copy Buttons
     copyClassesBtn.addEventListener('click', () => {
@@ -332,9 +381,6 @@ function setupUIEvents() {
         copyToClipboard(jsx, copyJsxBtn);
     });
 }
-
-// --- History Logic ---
-// All history-related functions (initHistory, pushHistory, recordChange, applyHistoryState, updateHistoryUI) have been removed.
 
 // --- Core Logic & Highlighting ---
 
@@ -354,7 +400,6 @@ function handleClick(e) {
     if (selectedElement === e.target) return;
 
     selectedElement = e.target;
-    // History call removed: initHistory(selectedElement);
 
     highlightElement(selectedElement);
     openEditor(selectedElement);
@@ -377,8 +422,6 @@ function highlightElement(el) {
     highlighter.style.left = rect.left + 'px';
 
     // --- Visual Box Model Logic ---
-    // 1. Margin Box (Outside)
-    // We use borders to draw the margin area. Position is negative based on margin size.
     const mt = parseFloat(style.marginTop) || 0;
     const mr = parseFloat(style.marginRight) || 0;
     const mb = parseFloat(style.marginBottom) || 0;
@@ -393,8 +436,6 @@ function highlightElement(el) {
     boxMargin.style.borderBottomWidth = `${mb}px`;
     boxMargin.style.borderLeftWidth = `${ml}px`;
 
-    // 2. Padding Box (Inside)
-    // Padding is inside the border-box (usually).
     const pt = parseFloat(style.paddingTop) || 0;
     const pr = parseFloat(style.paddingRight) || 0;
     const pb = parseFloat(style.paddingBottom) || 0;
@@ -428,16 +469,16 @@ function openEditor(el) {
     // Smart Positioning
     const rect = el.getBoundingClientRect();
     const panelRect = panel.getBoundingClientRect();
-    let top = rect.bottom + 10;
+    let top = rect.bottom + 15; // Increased margin
     let left = rect.left;
 
     if (top + panelRect.height > window.innerHeight) {
-        top = rect.top - panelRect.height - 10;
-        if (top < 0) top = window.innerHeight - panelRect.height - 10;
+        top = rect.top - panelRect.height - 15; // Increased margin
+        if (top < 0) top = window.innerHeight - panelRect.height - 15;
     }
-    if (top < 10) top = 10;
-    if (left + panelRect.width > window.innerWidth) left = window.innerWidth - panelRect.width - 10;
-    if (left < 10) left = 10;
+    if (top < 15) top = 15;
+    if (left + panelRect.width > window.innerWidth) left = window.innerWidth - panelRect.width - 15;
+    if (left < 15) left = 15;
 
     panel.style.top = top + 'px';
     panel.style.left = left + 'px';
@@ -468,7 +509,6 @@ function renderBreadcrumbs(el) {
         if (!isLast) {
             span.onclick = () => {
                 selectedElement = node;
-                // History call removed: initHistory(selectedElement);
                 highlightElement(selectedElement);
                 openEditor(selectedElement);
             };
@@ -489,21 +529,27 @@ function renderClassList(el) {
     const classes = Array.from(el.classList);
 
     if (classes.length === 0) {
-        container.innerHTML = '<span style="color:#9ca3af;">No classes</span>';
+        container.innerHTML = '<span style="color:#6b7280; font-style: italic;">No Tailwind classes found on this element.</span>';
         return;
     }
 
     const groups = {
-        'Layout': [], 'Type': [], 'Colors': [], 'Interact': [], 'Responsive': [], 'Misc': []
+        'Layout & Spacing': [], 'Typography': [], 'Colors & Background': [], 'Interactivity': [], 'Responsiveness': [], 'Other': []
     };
 
     classes.forEach(cls => {
-        if (cls.includes('hover:') || cls.includes('focus:')) groups['Interact'].push(cls);
-        else if (cls.match(/^(sm:|md:|lg:|xl:|2xl:)/)) groups['Responsive'].push(cls);
-        else if (cls.match(/^(text-|font-|leading-|tracking-)/)) groups['Type'].push(cls);
-        else if (cls.match(/^(bg-|text-|border-|shadow-)/)) groups['Colors'].push(cls);
-        else if (cls.match(/^(p-|m-|w-|h-|flex|grid|gap-|justify-|items-|absolute|relative|fixed)/)) groups['Layout'].push(cls);
-        else groups['Misc'].push(cls);
+        // Check for Responsive prefixes first
+        if (cls.match(/^(sm:|md:|lg:|xl:|2xl:)/)) groups['Responsiveness'].push(cls);
+        // Check for Interaction states
+        else if (cls.includes('hover:') || cls.includes('focus:') || cls.includes('active:')) groups['Interactivity'].push(cls);
+        // Check for Typesetting
+        else if (cls.match(/^(text-|font-|leading-|tracking-|italic|normal-case)/)) groups['Typography'].push(cls);
+        // Check for Colors/Visuals
+        else if (cls.match(/^(bg-|text-|border-|shadow-|ring-|fill-|stroke-)/)) groups['Colors & Background'].push(cls);
+        // Check for Layout/Spacing
+        else if (cls.match(/^(p-|m-|w-|h-|flex|grid|gap-|justify-|items-|absolute|relative|fixed|z-|overflow-|block|inline)/)) groups['Layout & Spacing'].push(cls);
+        // Everything else
+        else groups['Other'].push(cls);
     });
 
     Object.entries(groups).forEach(([label, groupClasses]) => {
@@ -521,7 +567,6 @@ function renderClassList(el) {
             chip.innerHTML = `<span>${cls}</span><span class="delete-x">&times;</span>`;
             chip.querySelector('.delete-x').onclick = (e) => {
                 e.stopPropagation();
-                // Direct DOM modification since recordChange is removed
                 el.classList.remove(cls);
                 refreshUI(el);
             };
@@ -555,7 +600,7 @@ function renderColorPalette(el) {
     });
 
     if (colors.length === 0) {
-        container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af">No visible colors</div>';
+        container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#6b7280; font-style: italic;">No computed colors detected.</div>';
         return;
     }
 
@@ -574,10 +619,28 @@ function renderColorPalette(el) {
 // --- Helpers ---
 
 function copyToClipboard(text, btnElement) {
+    // Use a temporary visual feedback for both button types
+    const isButton = btnElement.tagName.toLowerCase() === 'button';
+    const original = btnElement.textContent;
+
     navigator.clipboard.writeText(text).then(() => {
-        const original = btnElement.textContent;
-        btnElement.textContent = 'Copied!';
-        setTimeout(() => btnElement.textContent = original, 1500);
+        if (isButton) {
+            btnElement.textContent = 'Copied!';
+            btnElement.style.backgroundColor = '#10b981'; // Green accent
+            setTimeout(() => {
+                btnElement.textContent = original;
+                btnElement.style.backgroundColor = ''; // Revert to CSS
+            }, 1500);
+        } else {
+            // For color chips
+            const originalColor = btnElement.style.color;
+            btnElement.style.color = '#10b981';
+            btnElement.textContent = 'COPIED';
+            setTimeout(() => {
+                btnElement.style.color = originalColor;
+                btnElement.textContent = original;
+            }, 1500);
+        }
     });
 }
 
@@ -591,7 +654,7 @@ function convertToJSX(html) {
         if (voidTags.includes(tag)) return `<${tag}${attrs} />`;
         return match;
     });
-    // Style object conversion is complex, skipping for now as prompt focused on classes
+    // Note: JSX conversion handles class -> className
     return jsx;
 }
 

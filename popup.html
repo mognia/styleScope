@@ -3,18 +3,31 @@
 <head>
     <style>
         body {
-            width: 220px;
-            padding: 15px;
+            width: 270px;
+            padding: 0;
+            margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f9fafb;
+            background: #1f2937; /* Dark Gray */
             color: #1f2937;
+            border-radius: 6px;
         }
-        h2 {
+        .body-container{
+            padding: 15px;
+        }
+        .header-container {
             margin: 0 0 15px 0;
             font-size: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
+            background: #111827; /* Darker Header */
+            border-bottom: 1px solid #374151;
+            color: #e5e7eb; /* Light text */
+            padding: 10px ;
+            justify-content: center;
+        }
+        .magnifying-icon{
+            color: #e5e7eb;
         }
         .toggle-container {
             display: flex;
@@ -69,28 +82,56 @@
             font-weight: 500;
         }
         .footer {
-            margin-top: 15px;
+            margin: 15px 0;
             font-size: 11px;
-            color: #6b7280;
-            text-align: center;
+            color: #c9cccd;
+            /*text-align: center;*/
+        }
+        .points {
+            padding: 0 16px;
+            font-size: 12px;
+        }
+        .points li {
+            margin-bottom: 7px;
+            line-height: 20px;
+        }
+        .find-me{
+            font-size: 12px;
+            padding-top: 5px;
+            margin-top: 10px;
+            border-top: 1px solid #374151;
         }
     </style>
 </head>
 <body>
-<h2>
-    <span>🎨</span> Class Inspector
-</h2>
-
-<div class="toggle-container">
-    <span class="status-text" id="statusText">Inspector Off</span>
-    <label class="switch">
-        <input type="checkbox" id="toggleInspector">
-        <span class="slider"></span>
-    </label>
+<div class="header-container">
+    <span><img class="magnifying-icon" width="16" height="16" src="./icons/magnifying.svg"></span> Style Scope
 </div>
+<div class="body-container">
 
-<div class="footer">
-    Toggle ON, then click any element to edit classes.
+    <div class="toggle-container">
+        <span class="status-text" id="statusText">Inspector Off</span>
+        <label class="switch">
+            <input type="checkbox" id="toggleInspector">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="footer">
+        <ul class="points">
+            <li>Toggle ON, then hover any element to edit classes.</li>
+            <li>If Not Worked try reload the page and try again.</li>
+        </ul>
+
+
+
+        <div class="find-me">
+            <p>
+                also you can find me <a target="_blank" href="https://mognia.dev">here</a> or <a target="_blank" href="https://www.linkedin.com/in/morten-ghafarnia/">here</a>
+            </p>
+        <p >  Developed with <img width="16" height="16" src="icons/heart.svg"> by Mognia</p>
+        </div>
+    </div>
 </div>
 
 <script src="popup.js"></script>
