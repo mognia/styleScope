@@ -529,7 +529,7 @@ function renderClassList(el) {
     const classes = Array.from(el.classList);
 
     if (classes.length === 0) {
-        container.innerHTML = '<span style="color:#6b7280; font-style: italic;">No Tailwind classes found on this element.</span>';
+        container.innerHTML = '<span style="color:#6b7280; font-style: italic;">No CSS / SCC classes found on this element.</span>';
         return;
     }
 
