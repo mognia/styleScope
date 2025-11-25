@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Style Scope | Privacy Policy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Font Setup (Inter) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Light gray background */
+        }
+        .policy-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+<!-- Header & Navigation (Minimal) -->
+<header class="w-full bg-white shadow-md">
+    <div class="max-w-7xl mx-auto flex gap-5 align-items-center px-4 sm:px-6 lg:px-8 py-4">
+        <span><img class="magnifying-icon"  src="./icons/48/icon-48.png"></span>
+        <div class="text-2xl font-bold text-indigo-600">Style Scope</div>
+    </div>
+</header>
+
+<!-- Policy Content -->
+<main class="policy-container bg-white rounded-xl shadow-lg mt-8 mb-12">
+    <h1 class="text-4xl font-extrabold text-gray-900 mb-6 border-b pb-3">
+        Privacy Policy for Style Scope Extension
+    </h1>
+
+    <p class="text-gray-600 mb-8">
+        This Privacy Policy is effective immediately and governs the data practices of the **Style Scope** Chrome Extension.
+    </p>
+
+    <!-- Core Statement Section -->
+    <div class="bg-indigo-50 p-6 rounded-lg border-l-4 border-indigo-500 mb-8">
+        <h2 class="text-xl font-bold text-indigo-800 mb-3">Our Commitment to Your Privacy</h2>
+        <p class="text-lg text-indigo-700 font-medium">
+            This extension does **not** collect, store, or transmit any personally identifiable information, browsing data, or user interactions. All data processing (DOM manipulation, class editing, copying text) is done entirely **locally within the user's browser**.
+        </p>
+    </div>
+
+    <!-- Details -->
+    <h2 class="text-2xl font-semibold text-gray-800 mt-8 mb-4">Information Collection and Use</h2>
+    <p class="mb-6 text-gray-700">
+        The Style Scope extension is designed purely as a development tool. It operates entirely client-side.
+    </p>
+    <ul class="list-disc list-inside space-y-3 pl-4 text-gray-700">
+        <li>**No Data Collection:** We do not collect, store, or share any data about the websites you visit or the elements you inspect.</li>
+        <li>**Local Processing:** When you activate the inspector, the extension reads the DOM of the active tab only to display classes and computed styles. This data is never transmitted to our servers or any third party.</li>
+        <li>**Permissions Justification:** The extension requests the `activeTab`, `scripting`, and host (`<all_urls>`) permissions solely to enable the content script to run on the necessary pages to perform its intended function (inspecting and editing classes) at the user's request.</li>
+    </ul>
+
+    <h2 class="text-2xl font-semibold text-gray-800 mt-8 mb-4">Changes to This Privacy Policy</h2>
+    <p class="text-gray-700">
+        We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
+    </p>
+
+    <h2 class="text-2xl font-semibold text-gray-800 mt-8 mb-4">Contact Us</h2>
+    <p class="text-gray-700">
+        If you have any questions about this Privacy Policy, please contact us via the GitHub repository linked on the Chrome Web Store page.
+    </p>
+
+</main>
+
+</body>
+</html>
